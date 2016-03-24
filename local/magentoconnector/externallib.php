@@ -19,7 +19,7 @@
  * @package    local
  * @subpackage magentoconnector
  * @author     Edwin Phillips <edwin.phillips@catalyst-eu.net>
- * @copyright  Catalyst IT Ltd 2014 <http://catalyst-eu.net>
+ * @copyright  Catalyst IT Ltd 2014-16 <http://catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -99,32 +99,71 @@ class local_magentoconnector_external extends external_api {
 
         $roleid = $DB->get_field('role', 'id', array('shortname' => LOCAL_MAGENTOCONNECTOR_STUDENT_SHORTNAME));
 
-        $enrol = enrol_get_plugin('magento');
-
         foreach ($moodle_courses as $moodle_course) {
-            if ($course = $DB->get_record('course', array('idnumber' => $moodle_course['course_id']))) {
-                $enrolinstance = $DB->get_record('enrol', array('courseid' => $course->id,'enrol' => 'magento'), '*', MUST_EXIST);
-                $enrol->enrol_user($enrolinstance, $userid, $roleid);
-                $record = new stdClass();
-                $record->userid = $userid;
-                $record->ordernum = $order_number;
-                $record->courseid = $course->id;
-                $record->timestamp = time();
-                $DB->insert_record('local_magentoconnector_trans', $record);
+
+            if (substr($moodle_course['course_id'], 0, 6) == 'group-') { // This is a group enrolment request
+
+                $sql = "SELECT courseid
+                          FROM {enrol}
+                         WHERE enrol = :enrol
+                           AND customtext2 = :customtext2
+                           AND status = :status";
+
+                $params = array(
+                    'enrol' => 'magentogroup',
+                    'customtext2' => substr($moodle_course['course_id'], 6),
+                    'status' => 0
+                );
+
+                if ($courseids = $DB->get_fieldset_sql($sql, $params)) {
+                    $enrol = enrol_get_plugin('magentogroup');
+                    foreach ($courseids as $courseid) {
+                        $enrolinstance = $DB->get_record('enrol', array('courseid' => $courseid,'enrol' => 'magentogroup'), '*', MUST_EXIST);
+                        $enrol->enrol_user($enrolinstance, $userid, $roleid);
+                        $record = new stdClass();
+                        $record->userid = $userid;
+                        $record->ordernum = $order_number;
+                        $record->courseid = $courseid;
+                        $record->timestamp = time();
+                        $DB->insert_record('local_magentoconnector_trans', $record);
+                    }
+                }
+
+                if (isset($password)) {
+                    $enrolinstance->newusername = $user->username;
+                    $enrolinstance->newaccountpassword = $password;
+                }
+
+                $customer = $DB->get_record('user', array('id' => $userid));
+                $enrol->email_welcome_message($enrolinstance, $customer);
+
+                return true;
+
             } else {
-                // no such course ... ?
+
+                if ($course = $DB->get_record('course', array('idnumber' => $moodle_course['course_id']))) {
+                    $enrol = enrol_get_plugin('magento');
+                    $enrolinstance = $DB->get_record('enrol', array('courseid' => $course->id,'enrol' => 'magento'), '*', MUST_EXIST);
+                    $enrol->enrol_user($enrolinstance, $userid, $roleid);
+                    $record = new stdClass();
+                    $record->userid = $userid;
+                    $record->ordernum = $order_number;
+                    $record->courseid = $course->id;
+                    $record->timestamp = time();
+                    $DB->insert_record('local_magentoconnector_trans', $record);
+                }
+
+                if (isset($password)) {
+                    $enrolinstance->newusername = $user->username;
+                    $enrolinstance->newaccountpassword = $password;
+                }
+
+                $customer = $DB->get_record('user', array('id' => $userid));
+                $enrol->email_welcome_message($enrolinstance, $customer);
+
+                return true;
             }
         }
-
-        if (isset($password)) {
-            $enrolinstance->newusername = $user->username;
-            $enrolinstance->newaccountpassword = $password;
-        }
-
-        $customer = $DB->get_record('user', array('id' => $userid));
-        $enrol->email_welcome_message($enrolinstance, $customer);
-
-        return true;
     }
 
     /**

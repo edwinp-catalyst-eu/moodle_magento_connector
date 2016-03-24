@@ -19,12 +19,12 @@
  * @package    local
  * @subpackage magentoconnector
  * @author     Edwin Phillips <edwin.phillips@catalyst-eu.net>
- * @copyright  Catalyst IT Ltd 2014 <http://catalyst-eu.net>
+ * @copyright  Catalyst IT Ltd 2014-16 <http://catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2014041100;
+$plugin->version = 2016032400;
 $plugin->component = 'local_magentoconnector';
 

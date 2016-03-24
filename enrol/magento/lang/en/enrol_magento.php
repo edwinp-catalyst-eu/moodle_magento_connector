@@ -26,6 +26,8 @@
 
 $string['pluginname'] = 'Magento enrolments';
 $string['pluginname_desc'] = 'The Magento enrolment plugin enables enrolments via the Magento connector web service.';
+$string['sendcoursewelcomemessage'] = 'Send course welcome message';
+$string['sendcoursewelcomemessage_help'] = 'This setting determines whether a welcome message is sent by email to users upon enrolment into courses.';
 $string['status'] = 'Allow Magento enrolments';
 $string['status_desc'] = 'Allow Magento to enrol users into courses by default.';
 $string['status_help'] = 'This setting determines whether Magento can enrol users onto the course.';
